@@ -1,0 +1,82 @@
+---
+title: "Chapter 3 - Data Pre-processing"
+output: html_notebook
+---
+
+
+```{r setup}
+library(AppliedPredictiveModeling)   # Data sets
+library(tidyverse)                   # Oppan tidy style
+library(caret)                       # Modeling
+library(e1071)                       # skewness
+```
+
+## Compute
+
+```{r}
+data(segmentationOriginal)
+segmentationOriginal <- as_tibble(segmentationOriginal)
+segmentationOriginal
+```
+
+```{r}
+seg_data <- subset(segmentationOriginal, Case == "Train")
+seg_data
+```
+
+```{r}
+cell_id <- seg_data$Case
+class <- seg_data$Class
+case <- seg_data$Case
+seg_data <- seg_data[, -(1:3)]
+seg_data %>% select(-contains("Status")) -> seg_data
+seg_data
+```
+
+Skewness
+
+```{r}
+skewness(seg_data$AngleCh1)
+#seg_data %>% map_dfr(skewness)
+summarize_all(seg_data, skewness)
+```
+
+Box-Cox transform
+```{r}
+Ch1AreaTrans <- BoxCoxTrans(seg_data$AreaCh1)
+Ch1AreaTrans
+```
+
+Apply the transform with the `predict` function
+
+```{r}
+predict(Ch1AreaTrans, head(seg_data$AreaCh1)) -> dat
+dat
+```
+
+Or perform it all at once via `caret::preProcess`
+
+```{r}
+pca_object <- prcomp(seg_data, center = TRUE, scale = TRUE)
+percent_variance <- pca_object$sdev^2/sum(pca_object$sdev^2)*100
+percent_variance[1:3]
+```
+
+Near zero variance
+```{r}
+nearZeroVar(seg_data)
+```
+
+Correlations
+
+```{r}
+correlations <- cor(seg_data)
+dim(correlations)
+correlations[1:4, 1:4]
+```
+
+```{r}
+corrplot::corrplot(correlations, order = "hclust") 
+```
+
+## Exercises
