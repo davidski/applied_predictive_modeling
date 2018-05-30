@@ -5,10 +5,20 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
-Working notes for the `compute` and `exercises` sections of Kuhn & Johnson's 
-Applied Predictive Modeling text. Where practical, examples are converted 
-to `tidyverse` versions.
+Working notes for the `compute` (general principles) and `exercises` 
+(specific open ended tasks) sections of Kuhn & Johnson's Applied Predictive 
+Modeling text. Where practical, examples are converted to `tidyverse` versions.
 
-This is a companion to an internal bookclub on the topic.
+This repository is a companion to an internal weekly bookclub on the topic. 
+We're going through a chapter a week.
+
+## Data Sets
+
+```{r data_sets}
+data(package = c("AppliedPredictiveModeling", "mlbench", "caret") ) -> dat
+as_tibble(dat$results) %>% select(-LibPath) %>% print(n = nrow(.))
+```
+
