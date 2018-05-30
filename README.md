@@ -1,7 +1,8 @@
 Applied Predictive Modeling Notes
 ================
 
-## Applied Predictive Modeling Notes
+Working notes for the `compute` and `exercises` sections of Kuhn &
+Johnson’s Applied Predictive Modeling text. Where practical, examples
+are converted to `tidyverse` versions.
 
-Working notes for the `compute` sections of Kuhn & Johnson’s Applied
-Predictive Modeling text.
+This is a companion to an internal bookclub on the topic.

@@ -80,3 +80,25 @@ corrplot::corrplot(correlations, order = "hclust")
 ```
 
 ## Exercises
+
+3.1 
+
+```{r}
+library(mlbench)
+data(Glass)
+str(Glass)
+```
+
+Predictor variables
+
+```{r}
+select(Glass, -Type) %>% cor() %>% corrplot::corrplot()
+```
+
+```{r}
+caret::nearZeroVar(Glass)
+summarize_if(Glass, .p = is.numeric, .f = e1071::skewness)
+map_if(Glass, .p = is.numeric, .f = BoxCoxTrans) %>% map("lambda")
+caret::negPredValue(Glass)
+```
+
