@@ -1,0 +1,140 @@
+---
+title: "Chapter 4 - Over-fitting and Model Tuning"
+output: 
+  html_notebook: 
+    toc: yes
+---
+
+```{r setup}
+library(caret)                      # Modeling
+library(tidyverse)                  # Oppan Tidystyle
+library(AppliedPredictiveModeling)  # Data sets
+```
+
+## Compute
+
+Intersting, I didn't know a `data()` call could return two data objects!
+
+```{r}
+data(twoClassData)
+skimr::skim(classes)
+skimr::skim(predictors)
+```
+
+Create data partition based upon 80% of the classes.
+
+```{r}
+set.seed(1)
+trainingRows <- createDataPartition(classes, p=.80, list=FALSE)
+```
+
+Verify that we have 80% of the training data
+```{r}
+nrow(trainingRows) / length(classes)
+```
+
+Yup! Looks good! But how about the class distribution?
+
+```{r}
+tibble(classes = classes[trainingRows]) %>% group_by(classes) %>% 
+  summarize(train_pct = n() / nrow(.)) %>% left_join(
+   (tibble(classes = classes) %>% group_by(classes) %>% 
+  summarize(full_pct = n() / nrow(.))), by="classes")
+```
+Also good!
+
+## Create training and test sets
+
+```{r}
+trainPredictors <- predictors[trainingRows, ]
+trainClasses <- classes[trainingRows]
+testPredictors <- predictors[-trainingRows, ]
+testClasses <- classes[-trainingRows]
+```
+
+### Resampling
+
+Create three splits of 80% of the training data set
+
+```{r}
+set.seed(1)
+repeatedSplits <- createDataPartition(trainClasses, p = 0.8, times = 3)
+str(repeatedSplits)
+```
+
+### 10 cross folds validation
+
+Create a single 10 cross fold training set. Returns a list of 10 folds of the 
+training data set.
+
+```{r}
+set.seed(1)
+cvSplits <- createFolds(trainClasses, k = 10, returnTrain = TRUE)
+str(cvSplits)
+```
+
+### Basic Model Building
+
+```{r}
+trainPredictors_mtx <- as.matrix(trainPredictors)
+knnFit <- knn3(x = trainPredictors, y= trainClasses)
+knnFit
+```
+
+Using our model, run some predictions
+
+```{r}
+testPredictions <- predict(knnFit, newdata = testPredictors, 
+                          type = "class")
+testPredictions
+```
+Or, to see the vote in favor of each class. 
+
+I enrich the return values to make sure that caret is choosing based upon a 
+0.5 valuation.
+
+```{r}
+predict(knnFit, newdata = testPredictors) %>% as_tibble() %>% 
+  mutate(pred_class = if_else(Class1 >= 0.5, "Class1", "Class2"), 
+         basic_class = testPredictions, 
+         agreement = pred_class == basic_class)
+```
+
+### Determining Tuning Parameters
+
+```{r}
+data(GermanCredit)
+set.seed(1056)
+trainingRows <- createDataPartition(GermanCredit$Class, p=0.8, list = FALSE)
+GermanCreditTrain <- GermanCredit[trainingRows, ]
+
+predictors_to_drop <- nearZeroVar(GermanCreditTrain)
+columns_dropped <- names(GermanCreditTrain)[predictors_to_drop]
+GermanCreditTrain <- GermanCreditTrain[, -predictors_to_drop]
+
+# the following columns are removed per the chapter code
+# TODO: Need to look into this more
+GermanCreditTrain <- select(GermanCreditTrain,-c(#AccountStatus.lt.0, 
+                               SavingsAccountBonds.lt.100, EmploymentDuration.lt.1, 
+                               EmploymentDuration.Unemployed, Personal.Male.Married.Widowed,
+                               Property.Unknown, Housing.ForFree ))
+svmFit <- train(Class ~ .,
+                data=GermanCreditTrain, 
+                method = "svmRadial", 
+                # center and scale all predictors
+                preProcess = c("center", "scale"), 
+                # cost function variation
+                tuneLength = 10,
+                # do repeated cross fold validation, with 5 repeats
+                trControl = trainControl(method = "repeatedcv",
+                                         repeats = 5))
+svmFit
+```
+
+```
+
+
+## Exercises
+
+### 4.1
+
